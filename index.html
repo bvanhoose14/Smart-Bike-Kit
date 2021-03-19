@@ -5,7 +5,7 @@
 -->
 <html>
 <head>
-	<title>Water Depth Sensor</title>
+	<title>Smart Bike Kit</title>
 	<!-- Bootstrap CSS -->
 	<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
 
@@ -58,12 +58,10 @@
 	<div class="row">
 		<div class="col-md-offset-0 col-md-8 text-left slide-text">
 			<h1>Abstract</h1>
-			<p style="font-size: 20px;"><b>Our teams objective is to create a handheld water depth sensor that will interface with a phone to give the user the depth, 
-			for use in applications such as canyoneering, fishing, cliff diving, search and rescue.</b></p>
-			<p style="font-size: 20px;"><b>We need to utilize either ultrasonic sensors or sonar in order to calculate water depth regardless 
-			on how clear the water is. Needs to be small enough to be handheld, lightweight for taking in a pack.</b></p>
-			<p style="font-size: 20px;"><b>This project allows improved safety in several applications including those mentioned above. Knowing how deep or shallow
-			water is can prevent accidents from happening in areas.</b></p>
+			<p style="font-size: 20px;"><b>Kit that can be attached to any ebike to increase functionality.</b></p>
+			<p style="font-size: 20px;"><b>Features such as turn signals, Speedometer, led lightstrip for wheels, speakers, trip meter/odometer, 
+			rear object sensor, and security alarm.</b></p>
+			<p style="font-size: 20px;"><b>This project allows improved safety by clearer comunications from bike riders to other vehicles as well as entertainment. </b></p>			
 		</div><!-- End col-md-8-->
 		<div class="col-md-offset-2"></div><!-- End col-md-offset-2 -->
 	</div><!-- End Row -->
@@ -101,8 +99,8 @@
 		<div class="col-md-3 col-sm-6">
 			<div class="features-div">
 			   <i class="fa fa-mobile"></i>
-			   <h4>Correct calculations of water depth from sensor input</h4>
-			   <p>Navigate the datasheet of the sensing device or board</p>
+			   <h4>Handle proccessing from sensor and accessory input</h4>
+			   <p>Navigate the datasheet of the sensing devices and may have to create protocols to interpret all the information</p>
 			</div>			
 		</div><!-- End col-md-3-->
 		<div class="col-md-3 col-sm-6">
@@ -126,22 +124,22 @@
 		<div class="col-md-3 col-sm-6">
 			<div class="features-div">
 			   <i class="fa fa-pencil"></i>
-			   <h4>Designing a pcb to manage the sensor and connect with bluetooth</h4>
+			   <h4>Designing a pcb to manage the sensor, accessory, and connect with bluetooth</h4>
 			   <p>Study the datasheets of the sensor we use in order to interface it correctly with a microcontroller</p>
 			</div>
 		</div><!-- End col-md-3-->
 		<div class="col-md-3 col-sm-6">
 			<div class="features-div">
 			   <i class="fa fa-life-ring"></i>
-			   <h4>Design the enclosure such that it protects the electronics from water and debris</h4>
-			   <p>Design the enclosure such that it protects the electronics from water and debris</p>
+			   <h4>Calculations for speed and which sensor to use</h4>
+			   <p>Determine a technique and way to calculate speed</p>
 			</div>			
 		</div><!-- End col-md-3-->
 		<div class="col-md-3 col-sm-6">
 			<div class="features-div">
 			   <i class="fa fa-mobile"></i>
-			   <h4>Calibrating sensor to work in water</h4>
-			   <p>Lots of testing</p>
+			   <h4>Adapting ebike power supply</h4>
+			   <p>Try to develop universal adapter</p>
 			</div>			
 		</div><!-- End col-md-3-->
 	</div><!-- End row -->
@@ -161,18 +159,28 @@
 		<th>Completed</th>
 	  </tr>
 	  <tr>
-		<td>Decide what sensors to order</td>
+		<td>Decide what parts to order</td>
 		<td>2/26/21</td>
 		<td>yes</td>
 	  </tr>
 	  <tr>
-		<td>Add template and finalize Webpage V2</td>
-		<td>3/12/21</td>
+		<td>Finalize Webpage V3</td>
+		<td>3/26/21</td>
 		<td>yes</td>
 	  </tr>
 	  <tr>
-		<td>Test sensors</td>
-		<td>3/25/21</td>
+		<td>Develop bitmaping protocol</td>
+		<td>3/29/21</td>
+		<td>no</td>
+	  </tr>
+	   <tr>
+		<td>Develop bluetooth interfacing</td>
+		<td>4/15/21</td>
+		<td>no</td>
+	  </tr>
+	   <tr>
+		<td>Develop LED matrix battery enclosure</td>
+		<td>4/25/21</td>
 		<td>no</td>
 	  </tr>
 	  <tr>
@@ -274,12 +282,14 @@
 			    <h3>Prototype</h3>
 			    <div class="pricing-box-features">
 			    	<ul>
-			    		<li>Sensor: $20-100</li>
 			    		<li>Blutooth Module: $10</li>
 			    		<li>Batteries: $4</li>
+						<li>LED matrix: $40</li>
+						<li>Phone mount: $20</li>
+						<li>Microprocessor: $6</li>
 			    	</ul>
 			    </div>
-				<h4>Total cost for 1 device: $34 - $114</h4>			   
+				<h4>Total cost for 1 device: $80</h4>			   
 			</div>
 		</div><!-- End col-dm-4 -->
 		<div class="col-md-4 pricing-box-best">
@@ -294,11 +304,12 @@
                 		<li>Blutooth Module: $10</li>
 						<li>Batteries: $4</li>
 						<li>3D printing filament: $11</li>
-						<li>Styrofoam: $20</li>
-						<li>Fiberglass: $11</li>						
+						<li>LED matrix: $40</li>
+						<li>Phone mount: $20</li>
+						<li>LED Strips: $20</li>										
                 	</ul>
                 </div>
-				<h4>Total cost for 1 device: $99</h4>			
+				<h4>Total cost for 1 device: $153</h4>			
             </div>
 		</div><!-- End col-dm-4 -->		
 	</div><!-- End row -->
