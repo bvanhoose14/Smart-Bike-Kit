@@ -1,0 +1,28 @@
+Ebike kit
+- App interface on phone displays:
+* speed
+* trip info
+* link to default GPS app
+*
+
+- LED matrix backplate (alternate POV backplate)
+- Additional LED strips along wheels and potentially along bike
+- Audio spectrum analyzer of LED strips
+
+- Speedometer
+- Odometer saved in app, nonvolatile memory - database
+- Buttons automatically start turn signals
+- Brakes automatically activate brake light
+- Distance sensor to alert biker of cars approaching from behind
+- Power adapter 
+- Security system?
+
+TA suggestions:
+Don't send images over bluetooth? prestore images on board
+speed - esp32 MCU with higher speed good for LED
+
+esp32 devkit $10: https://www.mouser.com/ProductDetail/Espressif-Systems/ESP32-DevKitC-32D?qs=%252BEew9%252B0nqrDsObWEpDx6YQ%3D%3D&mgh=1&gclid=Cj0KCQjwl9GCBhDvARIsAFunhsnQ0lL3rIjIEgrJraHzpGrJMpwQbFgGJfqPUwvrP5upAOd2SrTSWfcaAtiuEALw_wcB
+OR: https://www.sparkfun.com/products/15663
+
+LED strip $16: https://www.adafruit.com/product/1376?length=1
+LED Matrix $25: https://www.adafruit.com/product/420
