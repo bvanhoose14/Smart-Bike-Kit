@@ -26,3 +26,36 @@ OR: https://www.sparkfun.com/products/15663
 
 LED strip $16: https://www.adafruit.com/product/1376?length=1
 LED Matrix $25: https://www.adafruit.com/product/420
+
+
+GETTING STARTED ESP32
+top:
+https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-devkitc.html#start-application-development
+actual getting started link:
+https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html
+we did windows, online install
+
+add <esp> folder to your user folder on C drive
+then go to step 5
+the %IDF_PATH% is wherever your edp-idf folder got installed, mine was desktop
+for example I ran: xcopy /e /i ..\Desktop\esp-idf\examples\get-started\hello_world hello_world 
+
+For step 6 go to: https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers
+this is the driver you might need if you don't see the MCU in the COM port.
+all other things should go smooth
+
+
+USING ECLIPSE IDE
+https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md
+
+lots of stuff goes on here...
+
+ARDUINO IDE setup
+https://www.youtube.com/watch?v=xPlN_Tk3VLQ&ab_channel=DroneBotWorkshop
+
+best option -
+VSCode setup
+https://docs.platformio.org/en/latest/tutorials/espressif32/espidf_debugging_unit_testing_analysis.html
+if project init fails on the ESP-IDF framework, first try adding an exception to your antivirus software.
+If that doesn't work try adding the git.exe to the platformIO path within VSCode.
+You likely also need an updated python
