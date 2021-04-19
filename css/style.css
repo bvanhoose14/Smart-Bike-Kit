@@ -334,6 +334,10 @@ body
 	background-color: #fff;
 }
 
+tr.spaceUnder>td {
+  padding-bottom: 1em;
+}
+
 /* About */
 .about-us-box {
     padding-top: 30px;
