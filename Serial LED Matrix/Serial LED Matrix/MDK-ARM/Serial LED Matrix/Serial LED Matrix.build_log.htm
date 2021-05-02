@@ -22,25 +22,25 @@ Dialog DLL:      TARMCM1.DLL V1.14.3.0
  
 <h2>Project:</h2>
 C:\Users\benva\Documents\GitHub\Smart-Bike-Kit\Serial LED Matrix\Serial LED Matrix\MDK-ARM\Serial LED Matrix.uvprojx
-Project File Date:  04/29/2021
+Project File Date:  05/02/2021
 
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 7 (build 960)', folder: 'C:\Keil_v5\ARM\ARMCC\Bin'
 Build target 'Serial LED Matrix'
 compiling main.c...
-../Core/Src/main.c(116): warning:  #188-D: enumerated type mixed with another type
+../Core/Src/main.c(36): warning:  #188-D: enumerated type mixed with another type
   			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 0);  // Pull the CLK LOW
-../Core/Src/main.c(117): warning:  #188-D: enumerated type mixed with another type
+../Core/Src/main.c(37): warning:  #188-D: enumerated type mixed with another type
   			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, byte&0x80);// Write one BIT data MSB first
-../Core/Src/main.c(119): warning:  #188-D: enumerated type mixed with another type
+../Core/Src/main.c(39): warning:  #188-D: enumerated type mixed with another type
   			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);  // Pull the CLK HIGH		
-../Core/Src/main.c(126): warning:  #188-D: enumerated type mixed with another type
+../Core/Src/main.c(45): warning:  #188-D: enumerated type mixed with another type
   		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);   // Pull the CS pin LOW
-../Core/Src/main.c(129): warning:  #188-D: enumerated type mixed with another type
+../Core/Src/main.c(48): warning:  #188-D: enumerated type mixed with another type
       HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);  // pull the CS HIGH
 ../Core/Src/main.c: 5 warnings, 0 errors
 linking...
-Program Size: Code=3052 RO-data=240 RW-data=120 ZI-data=1024  
+Program Size: Code=3288 RO-data=240 RW-data=48 ZI-data=1024  
 FromELF: creating hex file...
 "Serial LED Matrix\Serial LED Matrix.axf" - 0 Error(s), 5 Warning(s).
 
