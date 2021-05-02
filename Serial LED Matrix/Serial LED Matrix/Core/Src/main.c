@@ -57,6 +57,25 @@ void matrix_init(void)
 		write_matrix(0x0f, 0x00);       //  no test display
 }
 
+void LED_off(void)
+{	
+			write_matrix (1 , disp1ay[3][0]);
+			HAL_Delay (20);
+			write_matrix (8 , disp1ay[3][7]);			
+			HAL_Delay (20);
+			write_matrix (2 , disp1ay[3][1]);
+			HAL_Delay (20);
+			write_matrix (7 , disp1ay[3][6]);
+			HAL_Delay (20);
+			write_matrix (3 , disp1ay[3][2]);
+			HAL_Delay (20);
+			write_matrix (6 , disp1ay[3][5]);
+			HAL_Delay (20);
+			write_matrix (4 , disp1ay[3][3]);
+			HAL_Delay (20);
+			write_matrix (5 , disp1ay[3][4]);			
+}
+
 void display_right(void)
 {
 	for (int j=2; j<4; j++)
@@ -116,7 +135,9 @@ int main(void)
   while (1)
   {		
 		display_left();
-		display_right();
+		display_right();	
+		LED_off();
+		HAL_Delay (5200);		
   }
 }
 
