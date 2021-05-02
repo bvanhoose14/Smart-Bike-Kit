@@ -6,7 +6,7 @@ Our idea and goal was to create an **LED matrix** "License Plate" that could be 
 
 ## Functionality/Milestones
 
-![BITbike Prototype](https://github.com/bvanhoose14/Smart-Bike-Kit/blob/main/Resources/block2.PNG)
+![BITbike Prototype](/images/block2.jpg)
 The block diagram above shows a high level functionality of the system. We developed an application using Java for the android to work with the bluetooth classic protocol as well as a simple GUI. We completed the other end of the bluetooth connection using the ESP32 built in bluetooth module. Then we transferred the information to the STM32 board and handled the incoming GPIO signals with handlers, requiring the use of the EXTI controller. This functionality satisfied our first milestone of the project, to be able to control the MCU with a phone via bluetooth. 
 
 The STM32 also served as the controller for the LED matrix and we could display various figures, such as text, or arrows for blinkers. We successfully did this through.......
@@ -21,10 +21,10 @@ With so many devices on this system, a lot of setup is involved. This requires g
 ## Wiring
 
 ## Schematics
-![Power Supply Schematic](https://github.com/bvanhoose14/Smart-Bike-Kit/blob/main/Power%20Supply%20PCB/power-supply-diagram.pdf)
-![Power Supply Board](https://github.com/bvanhoose14/Smart-Bike-Kit/blob/main/Power%20Supply%20PCB/power-supply-board.pdf)
+![Power Supply Schematic](/images/power_sch.PNG)
+![Power Supply Board](/images/power_board.PNG)
 ## Power
 The assembled power supply is in the image below. All three of the screw terminal connectors are connected to the same 5V line. It is possible to provide power to the board using one of the screw terminals, or the barrel jack. To connect our battery pack to it, we simply connected the wires to one of the screw terminals. For alternative testing it is certainly an option to use a 5V supply with a barrel jack connected to a wall outlet.
-![Assembled Power Supply](https://github.com/bvanhoose14/Smart-Bike-Kit/blob/main/Power%20Supply%20PCB/pcb-built.JPG)
+![Assembled Power Supply](/images/pcb-built.JPG)
 
 To power the microcontrollers and LED matrix, we used one screw terminal for the ESP32, and the other for the STM32 while the third one was occupied with the battery pack. We fed power into the LED matrix from the STM32 5V pin and thus all our devices could be powered for at least an entire hour by the batteries.
