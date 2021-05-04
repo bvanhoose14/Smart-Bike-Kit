@@ -20,7 +20,7 @@ Naturally someone would want all these electrical devices to be powered. So we h
 We also utilized some of the on-board peripherals of the STM32, specifically the **gyroscope**. As a bike turns it tilts in the direction it is turning. This makes it possible to automatically turn off the blinker signals with the gyroscope. Therefore we used **I2C** to interact with this sensor and turn off the blinker signals once the bike as straightened back out after a turn signal was initiated. This satisfied our goals for our fourth milestone.
 
 # Setup
-With several devices on this system, a lot of setup is involved. This requires good detail so as not to mess it up. First, program and flash the ESP32 with the code located in the ESP32 Code folder. Then program and flash the STM32 with the code in the STM32 code folder. Another reference that may be helpful which we utilized is [controllers tech](https://controllerstech.com/led-dot-matrix-and-stm32/). 
+With several devices on this system, a lot of setup is involved. This requires good detail so as not to mess it up. First, program and flash the ESP32 with the respective code located in one of the two version folders. Then program and flash the STM32 with the respective code one of the same version folder. Another reference that may be helpful which we utilized is [controllers tech](https://controllerstech.com/led-dot-matrix-and-stm32/). 
 
 ## Wiring
 We have set pins specifically with our designs. See the diagram below to see how to connect the devices together.
@@ -32,6 +32,8 @@ Additionally, see the image below for the STM32 pins PB15, PB11, and PB13 for th
 ![I2C pins](/images/i2c_pins.PNG)
 
 ## Schematics
+Below is the schematic and PCB layout for the buck converter power supply.
+
 ![Power Supply Schematic](/images/power_sch.PNG)
 
 ![Power Supply Board](/images/power_board.PNG)
