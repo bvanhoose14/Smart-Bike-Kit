@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:mapbox="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="top"
+    tools:context=".MainActivity">
+
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            tools:context=".MainActivity">
+            <ImageView
+                android:id="@+id/leftBtn"
+                android:layout_width="100dp"
+                android:layout_height="50dp"
+                android:adjustViewBounds="true"
+                android:padding="0dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_left_btn_off"/>
+            <Button
+                android:id="@+id/reconBtn"
+                android:layout_width="195dp"
+                android:layout_height="wrap_content" />
+
+            <ImageView
+                android:id="@+id/rightBtn"
+                android:padding="5dp"
+                android:scaleType="fitCenter"
+                android:adjustViewBounds="true"
+                android:layout_width="100dp"
+                android:layout_height="50dp"
+                android:src="@drawable/ic_right_btn_off"/>
+        </LinearLayout>
+        <com.mapbox.mapboxsdk.maps.MapView
+            android:id="@+id/mapView"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/speeddisplay"
+            android:layout_width="200dp"
+            android:layout_height="150dp"
+            android:gravity="center"
+            />
+        <TextView
+            android:id="@+id/speedlabel"
+            android:layout_width="100dp"
+            android:layout_height="25dp"
+            android:gravity="center"
+            />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center">
+        <ImageButton
+            android:id="@+id/settingsbtn"
+            android:src="@drawable/ic_settings_btn"
+            android:layout_width="75dp"
+            android:layout_height="75dp"
+            android:adjustViewBounds="true"
+            android:padding="1dp"
+            android:scaleType="fitCenter">
+
+        </ImageButton>
+
+
+        <ImageButton
+            android:id="@+id/statsbtn"
+            android:src="@drawable/ic_stats_btn"
+            android:layout_width="75dp"
+            android:layout_height="75dp"
+            android:adjustViewBounds="true"
+            android:padding="1dp"
+            android:scaleType="fitCenter">
+        </ImageButton>
+
+
+    </LinearLayout>
+
+
+
+    </LinearLayout>
+
+
+
