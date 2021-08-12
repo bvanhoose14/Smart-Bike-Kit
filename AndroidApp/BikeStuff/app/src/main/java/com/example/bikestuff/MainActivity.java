@@ -8,10 +8,17 @@ import android.app.ActionBar;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import com.harrysoft.androidbluetoothserial.BluetoothManager;
+import com.harrysoft.androidbluetoothserial.BluetoothSerialDevice;
+import com.harrysoft.androidbluetoothserial.SimpleBluetoothDeviceInterface;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+//import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothSocket;
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineCallback;
 import com.mapbox.android.core.location.LocationEngineProvider;
@@ -29,14 +36,30 @@ import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.ref.WeakReference;
+import java.util.Collection;
 import java.util.List;
+
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity implements
         OnMapReadyCallback, PermissionsListener {
+
+    private SimpleBluetoothDeviceInterface deviceInterface;
+    BluetoothManager bluetoothManager = BluetoothManager.getInstance();
+    BluetoothDevice mcu;
+    private byte LEFT = 0;
+    private byte RIGHT = 0;
+    private OutputStream outputStream;
+    private InputStream inStream;
+    private boolean readspeed = false;
     private PermissionsManager permissionsManager;
     private MapView mapView;
     private MapboxMap mapboxMap;
+    boolean connectedToDevice = false;
     TextView speedid, speeddisplay;
     Button connectbtn;
 
@@ -66,7 +89,116 @@ public class MainActivity extends AppCompatActivity implements
         speeddisplay = findViewById(R.id.speeddisplay);
         speeddisplay.setTextSize((float)76.0);
         speeddisplay.setText("00");
+
+        if (bluetoothManager == null) {
+            // Bluetooth unavailable on this device
+            Toast.makeText(getApplicationContext(), "Bluetooth not available.", Toast.LENGTH_LONG).show();
+            finish();
+        }
+
+        connectbtn.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v) {
+                if(connectedToDevice) {
+                    bluetoothManager.closeDevice(mcu.getAddress());
+                }
+                Collection<BluetoothDevice> pairedDevices = bluetoothManager.getPairedDevicesList();
+                boolean found = false;
+                for (BluetoothDevice device : pairedDevices) {
+                    //Toast.makeText(this, "Device Name: "+ device.getName(), Toast.LENGTH_LONG).show();
+
+                    if(device.getName().contains("ESP"))
+                    {
+
+                            connectedToDevice = true;
+                            found = true;
+                            mcu = device;
+                            break;
+
+                    }
+//            else
+//            {
+//                Toast.makeText(this, "ESP not found", Toast.LENGTH_LONG).show();
+//            }
+                }
+
+                if(found == true)
+                {
+                    Toast.makeText(getApplicationContext(), "Connected to ESP32", Toast.LENGTH_SHORT).show();
+                    connectDevice(mcu.getAddress());
+                }
+                else
+                {
+                    Toast.makeText(getApplicationContext(), "Connection Failed, Please Check Bluetooth Settings", Toast.LENGTH_SHORT).show();
+                }
+
+
+
+            }
+
+        });
     }
+
+
+
+    /////BLUETOOTH METHODS///////
+
+
+    private void connectDevice(String mac) {
+        bluetoothManager.openSerialDevice(mac)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onConnected, this::onError);
+    }
+
+    private void onConnected(BluetoothSerialDevice connectedDevice) {
+        // You are now connected to this device!
+        // Here you may want to retain an instance to your device:
+        deviceInterface = connectedDevice.toSimpleDeviceInterface();
+
+        // Listen to bluetooth events
+        deviceInterface.setListeners(this::onMessageReceived, this::onMessageSent, this::onError);
+
+        // Let's send a message:
+        //deviceInterface.sendMessage("Hello world!\n");
+    }
+
+    private void onMessageSent(String message) {
+        // We sent a message! Handle it here.
+        //Toast.makeText(this, "Sent a message! Message was: " + message, Toast.LENGTH_LONG).show(); // Replace context with your context instance.
+    }
+
+    private void onMessageReceived(String message) {
+        // We received a message! Handle it here.
+        if(readspeed = true)
+        {
+            speeddisplay.setText(message);
+            readspeed = false;
+        }
+
+
+        else if (message.equals("x")) {
+                Toast.makeText(this, "Turn Signal Cancelled", Toast.LENGTH_SHORT).show();
+
+                RIGHT = 0;
+                LEFT = 0;
+                deviceInterface.sendMessage("o\n");
+            }
+        
+        else if(message.equals("s"))
+        {
+            readspeed = true;
+        }
+        //Toast.makeText(this, "Received a message! Message was: " + message, Toast.LENGTH_LONG).show(); // Replace context with your context instance.
+    }
+
+    private void onError(Throwable error) {
+        // Handle the error
+    }
+
+
+    /////////LOCATION METHODS///////////
 
     @SuppressWarnings( {"MissingPermission"})
     private void enableLocationComponent(@NonNull Style loadedMapStyle) {
