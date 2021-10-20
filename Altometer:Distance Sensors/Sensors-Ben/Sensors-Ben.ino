@@ -1,8 +1,8 @@
 /*
  * Distance and altitude sensor class
  *    dist:
- *      yellow -> 16
- *      white  -> 17
+ *      yellow -> 16   (rxd)
+ *      white  -> 17   (txd)
  *      red    -> 5v
  *      black  -> gnd
  *      
