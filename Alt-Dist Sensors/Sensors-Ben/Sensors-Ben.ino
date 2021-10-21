@@ -25,11 +25,13 @@ enum statesRX
 Adafruit_MPL3115A2 baro = Adafruit_MPL3115A2();
 
 unsigned char data[4]={};
+int dist;
 
 void setup()
 {
     Serial.begin(9600); //OUTPUT
     Serial1.begin(9600, SERIAL_8N1, 17, 16);
+    
 }
 
 void loop()
@@ -42,9 +44,10 @@ void loop()
    readAltitude();
    readTemp();
    readPres();
-   Serial.println(" ");
-
-   delay(1000);
+   Serial.print("Distance = ");
+   Serial.print(dist);
+   Serial.println(" cm");
+   delay(250);
 }
 
 void readPres(){
@@ -105,10 +108,7 @@ void readDistance(){
                         if( sum == data[3] ){
                             uint16_t distance = ((uint16_t)data[1] << 8) + data[2];
                             if( distance > 30 ){
-                                Serial.print("Distance = ");
-                                Serial.print(distance/10);
-                                Serial.println(" cm");
-                                return;
+                                  dist = distance/10;
                             }
                             else{
                                 Serial.println("Distance below lower limit.");     
