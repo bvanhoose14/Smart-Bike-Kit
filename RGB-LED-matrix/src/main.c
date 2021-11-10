@@ -1,3 +1,4 @@
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file           : main.c
@@ -15,46 +16,42 @@
   *
   ******************************************************************************
   */
-/* The main file for driving the LED matrix. The only things that a user should have to
- * manipulate from here are the LED colors (R1 G1 B1 R2 G2 B2), and row address (CBA).
- * The column written to is determined by the shift clock
- *
- */
 #include "main.h"
-#include <math.h>
 #include "graphics.h"
+#include "gyro_mpu6050.h"
+
+I2C_HandleTypeDef hi2c1;
+
+
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-void UpdateDisplay();
-void WriteTopLeftPixel(GPIO_PinState s);
-void WriteEvenPixels(GPIO_PinState s);
-void WriteOddPixels(GPIO_PinState s);
+static void MX_I2C1_Init(void);
+void WriteImage(const unsigned int r[16], const unsigned int g[16], const unsigned int b[16]);
 void usdelay(unsigned int delay);
 void msdelay(unsigned int delay);
-void BlindMe();
-void WriteImage(const unsigned int r[16], const unsigned int g[16], const unsigned int b[16]);
-/* USER CODE END 0 */
 
 uint16_t us_ticks;
+const unsigned int N = 9;
 
-//static int color_pins[6] = {R1_Pin, G1_Pin, B1_Pin, R2_Pin, G2_Pin, B2_Pin};
-//static int color_ports[6] = {R1_GPIO_Port, G1_GPIO_Port, B1_GPIO_Port, R2_GPIO_Port, G2_GPIO_Port, B2_GPIO_Port};
-const unsigned int N = 10;
+mpudata_t mpu_data;
+mpu6050_cfg mpu_cfg = { .accel_range = MPU6050_RANGE_2_G, .bandwidth = MPU6050_BAND_260_HZ,
+			.cycle_rate = MPU6050_CYCLE_5_HZ, .gyro_range = MPU6050_RANGE_500_DEG,
+			.clock_select = MPU6050_INTR_8MHz
+};
+
 /**
   * @brief  The application entry point.
   * @retval int
   */
 int main(void)
 {
-
-
   HAL_Init();
+
   SystemClock_Config();
 
-
-  /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_I2C1_Init();
   RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
 
 
@@ -65,39 +62,113 @@ int main(void)
   TIM3->DIER |= TIM_DIER_UIE;
   TIM3->EGR |= TIM_EGR_UG;
   NVIC_EnableIRQ(TIM3_IRQn);
-  NVIC_SetPriority(TIM3_IRQn, 1);
+  NVIC_SetPriority(TIM3_IRQn, 3);
   int alt = 0;
-  while (1)
-  {
-//	  BlindMe();
-//	  WriteImage(R_BOX, G_BOX, B_BOX);
-//	  msdelay(2);
-//	  WriteImage(R_CIRCLE, G_CIRCLE, B_CIRCLE);
-//	  msdelay(2);
-//	  WriteImage(R_SMILE, G_SMILE, B_SMILE);
-//	  msdelay(2);
-//	  HAL_Delay(5);
-//	  WriteTopLeftPixel(GPIO_PIN_SET);
-//	  msdelay(10);
-	  if (alt >= 0 && alt < 100)
-		  WriteImage(R_L_ARR1, BLANK, BLANK);
-	  else if (alt >= 100 && alt < 200)
-		  WriteImage(R_L_ARR2, BLANK, BLANK);
-	  else if (alt >= 200 && alt < 300)
-		  WriteImage(R_R_ARR1, BLANK, BLANK);
-	  else if (alt >= 300 && alt < 400)
-		  WriteImage(R_R_ARR2, BLANK, BLANK);
-	  else if (alt >= 400 && alt < 500)
+  int cleared = 0;
+  int turning = 0;
+  int ccount = 0;
+
+
+
+  reset_mpu6050(&hi2c1);
+  init_mpu6050(&hi2c1, &mpu_cfg);
+
+  while (1) {
+//	  HAL_StatusTypeDef status = read_mpu6050(&hi2c1, &mpu_data, &mpu_cfg);
+//	  if (HAL_OK != status) {
+//		  reset_mpu6050(&hi2c1);
+//		  HAL_Delay(500);
+//		  status = init_mpu6050(&hi2c1, &mpu_cfg);
+//		  if (HAL_OK != status) {
+//			  HAL_Delay(500);
+//		  }
+//	  } else {
+
+	  // Assume when cleared, that within 5 loops the input pins will then be 0
+
+	  if(HAL_GPIO_ReadPin(LEFT_A0_GPIO_Port, LEFT_A0_Pin) == GPIO_PIN_SET && cleared == 0) {
+		  if(HAL_GPIO_ReadPin(BRAKE_A2_GPIO_Port, BRAKE_A2_Pin) == GPIO_PIN_SET)
+			  if(alt >= 0 && alt < 50)
+				  WriteImage(R_L_ARR1_BOX, G_BOX, B_BOX);
+			  else {
+				  WriteImage(R_L_ARR2_BOX, G_BOX, B_BOX);
+				  if(alt > 100)
+					  alt = 0;
+			  }
+		  else {
+			  if(alt >= 0 && alt < 50)
+				  WriteImage(R_L_ARR1, BLANK, BLANK);
+			  else {
+				  WriteImage(R_L_ARR2, BLANK, BLANK);
+				  if(alt > 100)
+					  alt = 0;
+			  }
+		  }
+
+		  read_mpu6050(&hi2c1, &mpu_data, &mpu_cfg);
+
+		  if(mpu_data.gyroZ < -150 && !turning) {
+			  turning = 1;
+		  }
+		  else if(mpu_data.gyroZ > -100 && turning) {
+			  turning = 0;
+			  cleared = 1;
+			  HAL_GPIO_WritePin(CLEAR_GPIO_Port, CLEAR_Pin, GPIO_PIN_SET);
+		  }
+	  }
+	  else if(HAL_GPIO_ReadPin(RIGHT_A1_GPIO_Port, RIGHT_A1_Pin) == GPIO_PIN_SET && cleared == 0) {
+		  if(HAL_GPIO_ReadPin(BRAKE_A2_GPIO_Port, BRAKE_A2_Pin) == GPIO_PIN_SET)
+			  if(alt >= 0 && alt < 50)
+				  WriteImage(R_R_ARR1_BOX, G_BOX, B_BOX);
+			  else {
+				  WriteImage(R_R_ARR2_BOX, G_BOX, B_BOX);
+				  if(alt > 100)
+					  alt = 0;
+			  }
+		  else {
+			  if(alt >= 0 && alt < 50)
+				  WriteImage(R_R_ARR1, BLANK, BLANK);
+			  else {
+				  WriteImage(R_R_ARR2, BLANK, BLANK);
+				  if(alt > 100)
+					  alt = 0;
+			  }
+		  }
+
+		  read_mpu6050(&hi2c1, &mpu_data, &mpu_cfg);
+
+		  if(mpu_data.gyroZ > 150 && !turning) {
+			  turning = 1;
+		  }
+		  else if(mpu_data.gyroZ < 100 && turning) {
+			  turning = 0;
+			  cleared = 1;
+			  HAL_GPIO_WritePin(CLEAR_GPIO_Port, CLEAR_Pin, GPIO_PIN_SET);
+		  }
+	  }
+	  else if(HAL_GPIO_ReadPin(BRAKE_A2_GPIO_Port, BRAKE_A2_Pin) == GPIO_PIN_SET) {
 		  WriteImage(R_BOX, G_BOX, B_BOX);
+		  if(cleared)
+			  ccount++;
+	  }
 	  else {
 		  WriteImage(R_SMILE, G_SMILE, B_SMILE);
-		  if (alt > 600)
-			  alt = 0;
+		  if(cleared)
+			  ccount++;
 	  }
-	  msdelay(2);
+	  if(ccount > 5) {
+		  cleared = 0;
+		  ccount = 0;
+		  HAL_GPIO_WritePin(CLEAR_GPIO_Port, CLEAR_Pin, GPIO_PIN_RESET);
+	  }
+	  usdelay(1500);
 	  alt++;
+
   }
+
 }
+
+
 
 // each tick of delay is about 2us
 void usdelay(unsigned int delay) {
@@ -118,48 +189,41 @@ void TIM3_IRQHandler(void) {
 	us_ticks++;
 }
 
-//GPIO_PinState CheckBit(int val, int j) {
-//	return (val & (1 << j)) ? GPIO_PIN_SET : GPIO_PIN_RESET;
-//}
-
 static inline GPIO_PinState CheckBit(unsigned int val, int j) {
 	return (GPIO_PinState) ((val & (1 << j)) >> j);
 }
 
+/*
+ * Writes an image on the matrix. Expects 3 arrays with each bit representing an LED
+ * Currently not using PWM which would allow the full color spectrum.
+ */
 void WriteImage(const unsigned int r[16], const unsigned int g[16], const unsigned int b[16]) {
 	const GPIO_PinState s = GPIO_PIN_SET;
 	const GPIO_PinState res = GPIO_PIN_RESET;
 
 	for (int i = 0; i < 8; i++) {
 		HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, res);
+		// Set all RGB values
 		for (int j = 0; j < 32; j++) {
 
 			HAL_GPIO_WritePin(sCLK_GPIO_Port, sCLK_Pin, res);
 			usdelay(N);
-			// here we could make s correspond to a bit in the uint16_t number
 			HAL_GPIO_WritePin(R1_GPIO_Port, R1_Pin, CheckBit(r[i], j));
-//			usdelay(D);
 			HAL_GPIO_WritePin(G1_GPIO_Port, G1_Pin, CheckBit(g[i], j));
-//			usdelay(D);
 			HAL_GPIO_WritePin(B1_GPIO_Port, B1_Pin, CheckBit(b[i], j));
-//			usdelay(D);
 			HAL_GPIO_WritePin(R2_GPIO_Port, R2_Pin, CheckBit(r[i+8], j));
-//			usdelay(D);
 			HAL_GPIO_WritePin(G2_GPIO_Port, G2_Pin, CheckBit(g[i+8], j));
-//			usdelay(D);
 			HAL_GPIO_WritePin(B2_GPIO_Port, B2_Pin, CheckBit(b[i+8], j));
-			usdelay(N); // time it takes to write to all pins is maybe enough wait
-			// wait sCLK time
+			usdelay(N);
 			HAL_GPIO_WritePin(sCLK_GPIO_Port, sCLK_Pin, s);
 			usdelay(N);
-			// wait sCLK time
 		}
 		// assert blank
 		HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, s);
 		// set address
-		HAL_GPIO_WritePin(PIN_C_GPIO_Port, PIN_C_Pin, (GPIO_PinState) (i & 0x4));
-		HAL_GPIO_WritePin(PIN_B_GPIO_Port, PIN_B_Pin, (GPIO_PinState) (i & 0x2));
-		HAL_GPIO_WritePin(PIN_A_GPIO_Port, PIN_A_Pin, (GPIO_PinState) (i & 0x1));
+		HAL_GPIO_WritePin(C_GPIO_Port, C_Pin, (GPIO_PinState) (i & 0x4));
+		HAL_GPIO_WritePin(B_GPIO_Port, B_Pin, (GPIO_PinState) (i & 0x2));
+		HAL_GPIO_WritePin(A_GPIO_Port, A_Pin, (GPIO_PinState) (i & 0x1));
 		// latch
 		HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, s);
 		HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, res);
@@ -168,135 +232,7 @@ void WriteImage(const unsigned int r[16], const unsigned int g[16], const unsign
 	}
 }
 
-void BlindMe() {
-	const GPIO_PinState s = GPIO_PIN_SET;
-	const GPIO_PinState r = GPIO_PIN_RESET;
-	HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, r);
-	HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, r);
 
-	for (int i = 0; i < 8; i++) {
-		for (int j = 0; j < 32; j++) {
-
-			HAL_GPIO_WritePin(sCLK_GPIO_Port, sCLK_Pin, r);
-
-			HAL_GPIO_WritePin(R1_GPIO_Port, R1_Pin, s);
-			HAL_GPIO_WritePin(G1_GPIO_Port, G1_Pin, s);
-			HAL_GPIO_WritePin(B1_GPIO_Port, B1_Pin, s);
-			HAL_GPIO_WritePin(R2_GPIO_Port, R2_Pin, s);
-			HAL_GPIO_WritePin(G2_GPIO_Port, G2_Pin, s);
-			HAL_GPIO_WritePin(B2_GPIO_Port, B2_Pin, s);
-			usdelay(1); // time it takes to write to all pins is maybe enough wait
-			// wait sCLK time
-			HAL_GPIO_WritePin(sCLK_GPIO_Port, sCLK_Pin, s);
-			usdelay(1);
-			// wait sCLK time
-		}
-		// assert blank
-		HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, s);
-		// set address
-		HAL_GPIO_WritePin(PIN_C_GPIO_Port, PIN_C_Pin, (GPIO_PinState) (i & 0x4));
-		HAL_GPIO_WritePin(PIN_B_GPIO_Port, PIN_B_Pin, (GPIO_PinState) (i & 0x2));
-		HAL_GPIO_WritePin(PIN_A_GPIO_Port, PIN_A_Pin, (GPIO_PinState) (i & 0x1));
-		// latch
-		HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, s);
-		// deassert blank
-		HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, r);
-		// wait N time
-		usdelay(N);
-	}
-}
-
-void WriteOddPixels(GPIO_PinState s) {
-	HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, GPIO_PIN_RESET);
-	for (int i = 0; i < 32; i++) {
-
-		HAL_GPIO_WritePin(sCLK_GPIO_Port, sCLK_Pin, GPIO_PIN_RESET);
-		if (i % 2 == 1) {
-			HAL_GPIO_WritePin(B1_GPIO_Port, B1_Pin, s);
-		}
-		else {
-			HAL_GPIO_WritePin(B1_GPIO_Port, B1_Pin, GPIO_PIN_RESET);
-		}
-		usdelay(1);
-		// wait sCLK time
-		HAL_GPIO_WritePin(sCLK_GPIO_Port, sCLK_Pin, GPIO_PIN_SET);
-		usdelay(1);
-		// wait sCLK time
-	}
-	HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, GPIO_PIN_SET);
-}
-
-void WriteEvenPixels(GPIO_PinState s) {
-	HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, GPIO_PIN_RESET);
-	for (int i = 0; i < 32; i++) {
-
-		HAL_GPIO_WritePin(sCLK_GPIO_Port, sCLK_Pin, GPIO_PIN_RESET);
-		if (i % 2 == 0) {
-			HAL_GPIO_WritePin(R1_GPIO_Port, R1_Pin, s);
-		}
-		else {
-			HAL_GPIO_WritePin(R1_GPIO_Port, R1_Pin, GPIO_PIN_RESET);
-		}
-		HAL_Delay(1);
-		// wait sCLK time
-		HAL_GPIO_WritePin(sCLK_GPIO_Port, sCLK_Pin, GPIO_PIN_SET);
-		HAL_Delay(1);
-		// wait sCLK time
-	}
-	HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, GPIO_PIN_SET);
-}
-
-void WriteTopLeftPixel(GPIO_PinState s) {
-	HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(sCLK_GPIO_Port, sCLK_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(R1_GPIO_Port, R1_Pin, s);
-	// wait sCLK time
-	usdelay(2);
-//	HAL_Delay(1);
-	HAL_GPIO_WritePin(sCLK_GPIO_Port, sCLK_Pin, GPIO_PIN_SET);
-	usdelay(2);
-//	HAL_Delay(1);
-	// wait sCLK time
-	HAL_GPIO_WritePin(sCLK_GPIO_Port, sCLK_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(R1_GPIO_Port, R1_Pin, GPIO_PIN_RESET);
-	usdelay(2);
-//	HAL_Delay(1);
-	// wait sCLK time
-	for (int i = 0; i < 31; i++) {
-		HAL_GPIO_WritePin(sCLK_GPIO_Port, sCLK_Pin, GPIO_PIN_SET);
-		usdelay(2);
-//		HAL_Delay(1);
-		// wait sCLK time
-		HAL_GPIO_WritePin(sCLK_GPIO_Port, sCLK_Pin, GPIO_PIN_RESET);
-		usdelay(2);
-//		HAL_Delay(1);
-		// wait sCLK time
-	}
-	HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, GPIO_PIN_RESET);
-
-
-}
-
-void UpdateRow(char row) {
-//	char bitmask = 1;
-	// transfer row bits to CBA order
-//	HAL_GPIO_WritePin(PIN_C_GPIO_Port, PIN_C_Pin, (row & bitmask) );
-//	HAL_GPIO_WritePin(PIN_B_GPIO_Port, PIN_B_Pin, ((row >> 1) & bitmask) );
-//	HAL_GPIO_WritePin(PIN_A_GPIO_Port, PIN_A_Pin, ((row >> 2) & bitmask) );
-//
-//
-//	// Currently updating both rows to only be white
-//	for (int i = 0; i < 6; i++) {
-//		HAL_GPIO_WritePin(color_ports[i], color_pins[i], 1);
-//	}
-
-}
 
 /**
   * @brief System Clock Configuration
@@ -343,6 +279,29 @@ void SystemClock_Config(void)
 }
 
 /**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -358,47 +317,42 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, sCLK_Pin|B2_Pin|R2_Pin|PIN_B_Pin
-                          |PIN_A_Pin|R1_Pin|G1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, sCLK_Pin|B2_Pin|R2_Pin|B_Pin
+                          |A_Pin|R1_Pin|G1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(PIN_C_GPIO_Port, PIN_C_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(C_GPIO_Port, C_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, OE_Pin|LAT_Pin|B1_Pin|G2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, OE_Pin|LAT_Pin|CLEAR_Pin|B1_Pin
+                          |G2_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : sCLK_Pin */
-  GPIO_InitStruct.Pin = sCLK_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(sCLK_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : B2_Pin R2_Pin PIN_B_Pin PIN_A_Pin
-                           R1_Pin G1_Pin */
-  GPIO_InitStruct.Pin = B2_Pin|R2_Pin|PIN_B_Pin|PIN_A_Pin
-                          |R1_Pin|G1_Pin;
+  /*Configure GPIO pins : sCLK_Pin B2_Pin R2_Pin B_Pin
+                           A_Pin R1_Pin G1_Pin */
+  GPIO_InitStruct.Pin = sCLK_Pin|B2_Pin|R2_Pin|B_Pin
+                          |A_Pin|R1_Pin|G1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PIN_C_Pin */
-  GPIO_InitStruct.Pin = PIN_C_Pin;
+  /*Configure GPIO pins : LEFT_A0_Pin RIGHT_A1_Pin BRAKE_A2_Pin */
+  GPIO_InitStruct.Pin = LEFT_A0_Pin|RIGHT_A1_Pin|BRAKE_A2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : C_Pin */
+  GPIO_InitStruct.Pin = C_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(PIN_C_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(C_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : OE_Pin */
-  GPIO_InitStruct.Pin = OE_Pin|LAT_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(OE_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : LAT_Pin B1_Pin G2_Pin */
-  GPIO_InitStruct.Pin = B1_Pin|G2_Pin;
+  /*Configure GPIO pins : OE_Pin LAT_Pin CLEAR_Pin B1_Pin
+                           G2_Pin */
+  GPIO_InitStruct.Pin = OE_Pin|LAT_Pin|CLEAR_Pin|B1_Pin
+                          |G2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

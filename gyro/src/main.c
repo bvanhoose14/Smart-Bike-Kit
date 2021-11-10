@@ -20,60 +20,123 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "gyro_mpu6050.h"
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
 
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
+
+UART_HandleTypeDef huart3;
+
+/* USER CODE BEGIN PV */
+
+/* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_USART3_UART_Init(void);
+void printall(mpu_display_t *mpu_display);
+/* USER CODE BEGIN PFP */
 
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+
+/* USER CODE END 0 */
+
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
 int main(void)
 {
-	HAL_Init();
+  HAL_Init();
 
-	SystemClock_Config();
+  SystemClock_Config();
 
+  /* USER CODE BEGIN SysInit */
 
-	MX_GPIO_Init();
-	MX_I2C1_Init();
+  /* USER CODE END SysInit */
 
-	mpudata_t mpu_data;
-	mpu6050_cfg mpu_cfg = { .accel_range = MPU6050_RANGE_2_G, .bandwidth = MPU6050_BAND_260_HZ,
-					.cycle_rate = MPU6050_CYCLE_5_HZ, .gyro_range = MPU6050_RANGE_500_DEG,
-					.clock_select = MPU6050_INTR_8MHz
-	};
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_I2C1_Init();
+  MX_USART3_UART_Init();
+  init_handle(&huart3);
 
-	HAL_StatusTypeDef status = reset_mpu6050(&hi2c1);
+  mpudata_t mpu_data;
+  mpu_display_t mpu_display;
 
-	if (HAL_OK != status) {
+  mpu6050_cfg mpu_cfg = { .accel_range = MPU6050_RANGE_2_G, .bandwidth = MPU6050_BAND_260_HZ,
+				.cycle_rate = MPU6050_CYCLE_5_HZ, .gyro_range = MPU6050_RANGE_500_DEG,
+				.clock_select = MPU6050_INTR_8MHz
+  };
 
-	  while(1) {
-		  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-		  HAL_Delay(100);
-	  }
+  HAL_StatusTypeDef status = reset_mpu6050(&hi2c1);
+
+  status = init_mpu6050(&hi2c1, &mpu_cfg);
+
+  if (HAL_OK != status) {
+	while(1) {
+		HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+		HAL_Delay(100);
+		HAL_printf("Error\r\n");
 	}
+  }
 
-	status = init_mpu6050(&hi2c1, &mpu_cfg);
-
+  while (1)
+  {
+	status = read_mpu6050(&hi2c1, &mpu_data, &mpu_cfg);
+	// also note, if all values are 0, we should reset because that will never happen
+	// temp is about 36.53 in this case too
 	if (HAL_OK != status) {
-		while(1) {
-			HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-			HAL_Delay(100);
-		}
-	}
-
-	while (1)
-	{
-		status = read_mpu6050(&hi2c1, &mpu_data, &mpu_cfg);
+		HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+		HAL_printf("Error, resetting\r\n");
+		reset_mpu6050(&hi2c1);
+		HAL_Delay(1000);
+		status = init_mpu6050(&hi2c1, &mpu_cfg);
 		if (HAL_OK != status) {
-			HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-			HAL_Delay(100);
-		} else {
-
+			HAL_printf("Error, unable to reset\r\n");
+			HAL_Delay(1000);
 		}
+	} else {
+		update_str(&mpu_data,  &mpu_display);
+		printall(&mpu_display);
+		HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
 	}
+	HAL_Delay(1000);
+	HAL_printf("one second passed\r\n");
+  }
 
+}
+
+void printall(mpu_display_t *mpu_display) {
+	HAL_printf("accX = %s\r\n", mpu_display->accX);
+	HAL_printf("accY = %s\r\n", mpu_display->accY);
+	HAL_printf("accZ = %s\r\n", mpu_display->accZ);
+	HAL_printf("temp = %s\r\n", mpu_display->temp);
+	HAL_printf("gyroX = %s\r\n", mpu_display->gyroX);
+	HAL_printf("gyroY = %s\r\n", mpu_display->gyroY);
+	HAL_printf("gyroZ = %s\r\n", mpu_display->gyroZ);
 }
 
 /**
@@ -154,6 +217,38 @@ static void MX_I2C1_Init(void)
 
 }
 
+/**
+  * @brief USART3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART3_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART3_Init 0 */
+
+  /* USER CODE END USART3_Init 0 */
+
+  /* USER CODE BEGIN USART3_Init 1 */
+
+  /* USER CODE END USART3_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 115200;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART3_Init 2 */
+
+  /* USER CODE END USART3_Init 2 */
+
+}
 
 /**
   * @brief GPIO Initialization Function
@@ -169,7 +264,6 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
@@ -181,14 +275,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : SD_DETECT_Pin */
-  GPIO_InitStruct.Pin = SD_DETECT_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(SD_DETECT_GPIO_Port, &GPIO_InitStruct);
-
 }
 
+/* USER CODE BEGIN 4 */
+
+/* USER CODE END 4 */
 
 /**
   * @brief  This function is executed in case of error occurrence.

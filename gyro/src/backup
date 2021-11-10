@@ -1,0 +1,153 @@
+#include "main.h"
+#include "graphics.h"
+#include "gyro_mpu6050.h"
+
+I2C_HandleTypeDef hi2c1;
+
+
+
+void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+static void MX_I2C1_Init(void);
+void WriteImage(const unsigned int r[16], const unsigned int g[16], const unsigned int b[16]);
+void usdelay(unsigned int delay);
+void msdelay(unsigned int delay);
+
+uint16_t us_ticks;
+const unsigned int N = 9;
+
+mpudata_t mpu_data;
+mpu6050_cfg mpu_cfg = { .accel_range = MPU6050_RANGE_2_G, .bandwidth = MPU6050_BAND_260_HZ,
+			.cycle_rate = MPU6050_CYCLE_5_HZ, .gyro_range = MPU6050_RANGE_500_DEG,
+			.clock_select = MPU6050_INTR_8MHz
+};
+
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
+  HAL_Init();
+
+  SystemClock_Config();
+
+  MX_GPIO_Init();
+  MX_I2C1_Init();
+  RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+
+
+  // Timer is running at ~500kHz
+  TIM3->PSC = 0;
+  TIM3->ARR = 168;
+  TIM3->CR1 |= TIM_CR1_URS;
+  TIM3->DIER |= TIM_DIER_UIE;
+  TIM3->EGR |= TIM_EGR_UG;
+  NVIC_EnableIRQ(TIM3_IRQn);
+  NVIC_SetPriority(TIM3_IRQn, 3);
+  int alt = 0;
+
+  // setup up gyroscope read timer
+
+
+
+  reset_mpu6050(&hi2c1);
+  init_mpu6050(&hi2c1, &mpu_cfg);
+
+  while (1) {
+	  HAL_StatusTypeDef status = read_mpu6050(&hi2c1, &mpu_data, &mpu_cfg);
+//	  if (HAL_OK != status) {
+//		  reset_mpu6050(&hi2c1);
+//		  HAL_Delay(500);
+//		  status = init_mpu6050(&hi2c1, &mpu_cfg);
+//		  if (HAL_OK != status) {
+//			  HAL_Delay(500);
+//		  }
+//	  } else {
+		  if(mpu_data.gyroZ < -130)
+			  if(alt >= 0 && alt < 50)
+				  WriteImage(R_L_ARR1, BLANK, BLANK);
+			  else {
+				  WriteImage(R_L_ARR2, BLANK, BLANK);
+				  if(alt > 100)
+					  alt = 0;
+			  }
+		  else if(mpu_data.gyroZ > 130)
+			  if(alt >= 0 && alt < 50)
+				  WriteImage(R_R_ARR1, BLANK, BLANK);
+			  else {
+				  WriteImage(R_R_ARR2, BLANK, BLANK);
+				  if(alt > 100)
+					  alt = 0;
+			  }
+		  else
+			  WriteImage(R_SMILE, G_SMILE, B_SMILE);
+//	  }
+	  usdelay(1500);
+	  alt++;
+
+  }
+
+}
+
+// each tick of delay is about 2us
+void usdelay(unsigned int delay) {
+	TIM3->CR1 |= TIM_CR1_CEN;
+	us_ticks = 0;
+	while(us_ticks < delay)
+		;
+	TIM3->CR1 &= ~TIM_CR1_CEN;
+
+}
+
+void msdelay(unsigned int delay) {
+	usdelay(delay*500);
+}
+
+void TIM3_IRQHandler(void) {
+	TIM3->SR &= ~TIM_SR_UIF;
+	us_ticks++;
+}
+
+static inline GPIO_PinState CheckBit(unsigned int val, int j) {
+	return (GPIO_PinState) ((val & (1 << j)) >> j);
+}
+
+/*
+ * Writes an image on the matrix. Expects 3 arrays with each bit representing an LED
+ * Currently not using PWM which would allow the full color spectrum.
+ */
+void WriteImage(const unsigned int r[16], const unsigned int g[16], const unsigned int b[16]) {
+	const GPIO_PinState s = GPIO_PIN_SET;
+	const GPIO_PinState res = GPIO_PIN_RESET;
+
+	for (int i = 0; i < 8; i++) {
+		HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, res);
+		// Set all RGB values
+		for (int j = 0; j < 32; j++) {
+
+			HAL_GPIO_WritePin(sCLK_GPIO_Port, sCLK_Pin, res);
+			usdelay(N);
+			HAL_GPIO_WritePin(R1_GPIO_Port, R1_Pin, CheckBit(r[i], j));
+			HAL_GPIO_WritePin(G1_GPIO_Port, G1_Pin, CheckBit(g[i], j));
+			HAL_GPIO_WritePin(B1_GPIO_Port, B1_Pin, CheckBit(b[i], j));
+			HAL_GPIO_WritePin(R2_GPIO_Port, R2_Pin, CheckBit(r[i+8], j));
+			HAL_GPIO_WritePin(G2_GPIO_Port, G2_Pin, CheckBit(g[i+8], j));
+			HAL_GPIO_WritePin(B2_GPIO_Port, B2_Pin, CheckBit(b[i+8], j));
+			usdelay(N);
+			HAL_GPIO_WritePin(sCLK_GPIO_Port, sCLK_Pin, s);
+			usdelay(N);
+		}
+		// assert blank
+		HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, s);
+		// set address
+		HAL_GPIO_WritePin(C_GPIO_Port, C_Pin, (GPIO_PinState) (i & 0x4));
+		HAL_GPIO_WritePin(B_GPIO_Port, B_Pin, (GPIO_PinState) (i & 0x2));
+		HAL_GPIO_WritePin(A_GPIO_Port, A_Pin, (GPIO_PinState) (i & 0x1));
+		// latch
+		HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, s);
+		HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, res);
+		// wait N time
+		usdelay(N*5);
+	}
+}
